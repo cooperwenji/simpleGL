@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Core\Shader.cpp" />
+    <ClCompile Include="Core\Mesh.cpp" />
+    <ClCompile Include="Core\Model.cpp" />
+    <ClCompile Include="Core\PointLight.cpp" />
+    <ClCompile Include="Core\SpotLight.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Core\Shader.h" />
+    <ClInclude Include="Core\Camera.h" />
+    <ClInclude Include="Core\Mesh.h" />
+    <ClInclude Include="Core\Model.h" />
+    <ClInclude Include="Core\PointLight.h" />
+    <ClInclude Include="Core\DirLight.h" />
+    <ClInclude Include="Core\Transform.h" />
+    <ClInclude Include="Core\SpotLight.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Fragment_Shader.glsl" />
+    <None Include="Shaders\Vertex_Shader.glsl" />
+    <None Include="Shaders\light_fragShader.glsl" />
+    <None Include="Shaders\lamp_verShader.glsl" />
+    <None Include="Shaders\lamp_fragShader.glsl" />
+  </ItemGroup>
+</Project>
