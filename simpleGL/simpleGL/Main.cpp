@@ -13,7 +13,7 @@
 #include"Core\PointLight.h"
 #include"Core\DirLight.h"
 #include"Core\SpotLight.h"
-
+//å°è¯•ä½¿ç”¨
 GLfloat vertices[] = {
 	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 	0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
@@ -62,9 +62,9 @@ GLuint indices[] = {
 	1,2,3
 };
 GLfloat texCoords[] = {
-	0.0f, 0.0f,   //×óÏÂ½Ç
-	1.0f, 0.0f,   //ÓÒÏÂ½Ç
-	0.5f, 1.0f    //ÉÏÖĞ
+	0.0f, 0.0f,   //å·¦ä¸‹è§’
+	1.0f, 0.0f,   //å³ä¸‹è§’
+	0.5f, 1.0f    //ä¸Šä¸­
 };
 glm::vec3 cubePositions[] = {
 	glm::vec3(0.0f,  0.0f,  0.0f),
@@ -86,11 +86,11 @@ GLuint EBO;
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
-//ÉèÖÃ
+//è®¾ç½®
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
-//ÉãÏñ»ú±äÁ¿
+//æ‘„åƒæœºå˜é‡
 Camera camera(glm::vec3(0.0f, 0.0f, 20.0f));
 GLfloat lastX = SCR_WIDTH / 2.0f;
 GLfloat lastY = SCR_HEIGHT / 2.0f;
@@ -98,7 +98,7 @@ GLfloat lastY = SCR_HEIGHT / 2.0f;
 bool keys[1024];
 bool firstMouse = true;
 
-//¹âÔ´²ÎÊı
+//å…‰æºå‚æ•°
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	//ÉèÖÃ°´¼üÊÂ¼ş
+	//è®¾ç½®æŒ‰é”®äº‹ä»¶
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
@@ -141,40 +141,40 @@ int main(int argc, char **argv)
 	glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
 	glViewport(0, 0, windowWidth, windowHeight);
 
-	//ÉèÖÃºÍ±àÒë×ÅÉ«Æ÷
+	//è®¾ç½®å’Œç¼–è¯‘ç€è‰²å™¨
 	Shader shader("./Shaders/Vertex_Shader.glsl", "./Shaders/Fragment_Shader.glsl");
 	Shader lightingshader("./Shaders/lamp_verShader.glsl", "./Shaders/lamp_fragShader.glsl");
 
-	//¼ÓÔØÄ£ĞÍ
+	//åŠ è½½æ¨¡å‹
 	Model ourModel("../Model_Lib/nanosuit/nanosuit.obj");
 
-//µÆÔ´¶ÔÏó
-	//1.µã¹âÔ´¶ÔÏó
+//ç¯æºå¯¹è±¡
+	//1.ç‚¹å…‰æºå¯¹è±¡
 	PointLight pointlight_one(glm::vec3(0.7f, 0.2f, 2.0f), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f,0.09f, 0.032f));
 	PointLight pointlight_two(glm::vec3(2.3f, -3.3f, -4.0f), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.09f, 0.032f));
 	PointLight pointlight_three(glm::vec3(-4.0f, 2.0f, -12.0f), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.09f, 0.032f));
 	PointLight pointlight_four(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.09f, 0.032f));
-	//2.Æ½ĞĞ¹â¶ÔÏó
+	//2.å¹³è¡Œå…‰å¯¹è±¡
 	DirLight dirLight(glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.4f, 0.4f, 0.4f), glm::vec3(0.5f, 0.5f, 0.5f));
-	//3.¾Û¹âµÆ¶ÔÏó
+	//3.èšå…‰ç¯å¯¹è±¡
 	SpotLight spotLight(camera.Position- glm::vec3(0.0f,0.0f,18.0f), camera.Front, glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(17.5f)),glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f));
 	
-	//µÆ¹âÉèÖÃ
+	//ç¯å…‰è®¾ç½®
 	GLuint lightVAO;
 	glGenVertexArrays(1, &lightVAO);
 	glGenBuffers(1, &VBO);
 	glBindVertexArray(lightVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);  // Ö»ĞèÒª°ó¶¨VBO²»ÓÃÔÙ´ÎÉèÖÃVBOµÄÊı¾İ£¬ÒòÎªÈİÆ÷(ÎïÌå)µÄVBOÊı¾İÖĞÒÑ¾­°üº¬ÁËÕıÈ·µÄÁ¢·½Ìå¶¥µãÊı¾İ
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);  // åªéœ€è¦ç»‘å®šVBOä¸ç”¨å†æ¬¡è®¾ç½®VBOçš„æ•°æ®ï¼Œå› ä¸ºå®¹å™¨(ç‰©ä½“)çš„VBOæ•°æ®ä¸­å·²ç»åŒ…å«äº†æ­£ç¡®çš„ç«‹æ–¹ä½“é¡¶ç‚¹æ•°æ®
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	// ÉèÖÃµÆÁ¢·½ÌåµÄ¶¥µãÊôĞÔÖ¸Õë(½öÉèÖÃµÆµÄ¶¥µãÊı¾İ)
+	// è®¾ç½®ç¯ç«‹æ–¹ä½“çš„é¡¶ç‚¹å±æ€§æŒ‡é’ˆ(ä»…è®¾ç½®ç¯çš„é¡¶ç‚¹æ•°æ®)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 	glBindVertexArray(0);
 
-	//¾ØÕó±ä»»
+	//çŸ©é˜µå˜æ¢
 	
 	while (!glfwWindowShouldClose(window)) {
-		//¼ì²éÊÂ¼ş;
+		//æ£€æŸ¥äº‹ä»¶;
 		glfwPollEvents();
 		do_movement();
 
@@ -182,7 +182,7 @@ int main(int argc, char **argv)
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		//äÖÈ¾Ö¸Áî;
+		//æ¸²æŸ“æŒ‡ä»¤;
 		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
@@ -195,7 +195,7 @@ int main(int argc, char **argv)
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
 		glm::mat4 trans = projection * view;
 
-		//´«ËÍ¾ØÕó
+		//ä¼ é€çŸ©é˜µ
 		shader.setMat4("transform", trans);
 		shader.setMat4("model", model);
 		shader.setVec3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
@@ -205,21 +205,21 @@ int main(int argc, char **argv)
 		shader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
 		shader.setFloat("material.shininess", 32.0f);
 
-		//µã¹âÔ´Êı¾İ´«ËÍ
+		//ç‚¹å…‰æºæ•°æ®ä¼ é€
 		pointlight_one.TransData(shader, 0);
 		pointlight_two.TransData(shader, 1);
 		pointlight_three.TransData(shader, 2);
 		pointlight_four.TransData(shader, 3);
 
-		//Æ½ĞĞ¹âÊı¾İ´«ËÍ
+		//å¹³è¡Œå…‰æ•°æ®ä¼ é€
 		dirLight.TransData(shader);
 
-		//¾Û¹âµÆÊı¾İ´«ËÍ
+		//èšå…‰ç¯æ•°æ®ä¼ é€
 		spotLight.TransData(shader);
 		
 		ourModel.Draw(shader);
 
-		//µÆ¹âÎïÌå×ÅÉ«Æ÷
+		//ç¯å…‰ç‰©ä½“ç€è‰²å™¨
 		lightingshader.Use();
 		
 		model = glm::translate(model, lightPos);
@@ -232,7 +232,7 @@ int main(int argc, char **argv)
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 
-		//½»»»»º³å;
+		//äº¤æ¢ç¼“å†²;
 		glfwSwapBuffers(window);   
 	}
 
@@ -263,7 +263,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void do_movement()
 {
-	//ÉãÏñ»ú¿ØÖÆ
+	//æ‘„åƒæœºæ§åˆ¶
 	if (keys[GLFW_KEY_W])
 		camera.ProcessKeyboard(FORWARD, deltaTime);
 	if (keys[GLFW_KEY_S])
