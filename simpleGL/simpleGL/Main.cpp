@@ -9,11 +9,12 @@
 #include"Core\Camera.h"
 #include"Core\Model.h"
 #include"Dependencies\assimpd\assimp\vector3.h"
+#include"./Dependencies\stb\stb_image.h"
 
 #include"Core\PointLight.h"
 #include"Core\DirLight.h"
 #include"Core\SpotLight.h"
-//尝试使用
+
 GLfloat vertices[] = {
 	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 	0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
@@ -79,9 +80,23 @@ glm::vec3 cubePositions[] = {
 	glm::vec3(-1.3f,  1.0f, -1.5f)
 };
 
+//草的顶点数据
+GLfloat grassVertices[] = {
+	0.0f, 0.5f, 0.0f,   0.0f, 0.0f,
+	0.0f,-0.5f, 0.0f,   0.0f, 1.0f,
+	1.0f,-0.5f, 0.0f,   1.0f, 1.0f,
+
+	0.0f, 0.5f, 0.0f,   0.0f, 0.0f,
+	1.0f,-0.5f, 0.0f,   1.0f, 1.0f,
+	1.0f, 0.5f, 0.0f,   1.0f, 0.0f
+};
+
 GLuint VBO;
 GLuint VAO;
 GLuint EBO;
+
+GLuint grassVBO;
+GLuint grassVAO;
 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
@@ -101,11 +116,16 @@ bool firstMouse = true;
 //光源参数
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
+//-----------------交互函数----------------------------------------------------------
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void do_movement();
    
+//半透明草  函数
+unsigned int SetGrassData(GLuint& VAO, GLuint& VBO, GLfloat vertice[], int verticeLength, const string& filename);
+void DrawGrass(Shader& shader, const GLuint& VAO, unsigned int textureId, const std::vector<glm::vec3>& vegetation);
+
 int main(int argc, char **argv) 
 {
 	glfwInit();
@@ -127,7 +147,6 @@ int main(int argc, char **argv)
 	if (glewInit() != GLEW_OK)
 	{
 		std::cout << "Failed to initialize GLEW" << std::endl;
-		return -1;
 	}
 
 	//设置按键事件
@@ -155,10 +174,22 @@ int main(int argc, char **argv)
 	PointLight pointlight_three(glm::vec3(-4.0f, 2.0f, -12.0f), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.09f, 0.032f));
 	PointLight pointlight_four(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.09f, 0.032f));
 	//2.平行光对象
-	DirLight dirLight(glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.4f, 0.4f, 0.4f), glm::vec3(0.5f, 0.5f, 0.5f));
+	DirLight dirLight(glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.5f, 0.50f, 0.50f), glm::vec3(0.4f, 0.4f, 0.4f), glm::vec3(0.5f, 0.5f, 0.5f));
 	//3.聚光灯对象
 	SpotLight spotLight(camera.Position- glm::vec3(0.0f,0.0f,18.0f), camera.Front, glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(17.5f)),glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f));
 	
+	//半透明窗户 数据设置
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	unsigned int grassTextureId = SetGrassData(grassVAO, grassVBO, grassVertices, sizeof(grassVertices) / sizeof(GLfloat), "./blending_transparent_window.png");
+	std::vector<glm::vec3> vegetation;
+	vegetation.push_back(glm::vec3(-1.5f, 0.0f, -0.48f));
+	vegetation.push_back(glm::vec3(1.5f, 0.0f, 0.51f));
+	vegetation.push_back(glm::vec3(0.0f, 0.0f, 0.7f));
+	vegetation.push_back(glm::vec3(-0.3f, 0.0f, -2.3f));
+	vegetation.push_back(glm::vec3(0.5f, 0.0f, -0.6f));
+
 	//灯光设置
 	GLuint lightVAO;
 	glGenVertexArrays(1, &lightVAO);
@@ -218,6 +249,10 @@ int main(int argc, char **argv)
 		spotLight.TransData(shader);
 		
 		ourModel.Draw(shader);
+
+		//传送草的相关矩阵
+
+		DrawGrass(shader, grassVAO, grassTextureId, vegetation);
 
 		//灯光物体着色器
 		lightingshader.Use();
@@ -295,4 +330,78 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	camera.ProcessMouseScroll((GLfloat)yoffset);
+}
+
+unsigned int SetGrassData(GLuint& VAO, GLuint& VBO, GLfloat vertice[], int verticeLength, const string&  filename)
+{
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*verticeLength, vertice, GL_STATIC_DRAW);
+
+	//设置顶点坐标指针
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	//设置顶点的纹理坐标
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(2);
+
+	glBindVertexArray(0);
+
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+
+	int width, height, nrComponents;
+	unsigned char* image = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
+	if (image)
+	{
+		GLenum format;
+		if (nrComponents == 1)
+			format = GL_RED;
+		else if (nrComponents == 3)
+			format = GL_RGB;
+		else if (nrComponents == 4)
+			format = GL_RGBA;
+
+		//Assign texture to ID
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, image);
+		glGenerateMipmap(GL_TEXTURE_2D);
+		//参数设置
+		//设置纹理wrap参数
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+		//设置纹理过滤参数
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		stbi_image_free(image);
+	}
+	else
+	{
+		std::cout << "Texture failed to load at path: " << filename << std::endl;
+		stbi_image_free(image);
+	}
+	return textureID;
+}
+
+void DrawGrass(Shader& shader, const GLuint& VAO, unsigned int textureId ,const std::vector<glm::vec3>& vegetation)
+{
+	glActiveTexture(GL_TEXTURE0);
+	glUniform1i(glGetUniformLocation(shader.Program, "material.texture_diffuse1"), 0);
+	glBindTexture(GL_TEXTURE_2D, textureId);
+
+	glBindVertexArray(VAO);
+	glm::mat4 model;
+	for (unsigned int i = 0; i < vegetation.size(); i++)
+	{
+		model = glm::mat4();
+		model = glm::translate(model, vegetation[i]);
+		shader.setMat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+	}
+	glBindVertexArray(0);
 }

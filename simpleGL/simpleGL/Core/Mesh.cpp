@@ -17,7 +17,10 @@ void Mesh::setupMesh()
 
 	//1. 绑定VAO
 	glBindVertexArray(this->VAO);
-	//2.把顶点数组复制到缓冲中供opengl使用
+	//2.把顶点数组复制到缓冲中供opengl使用      VBO使用流程： 1、生成VAO和VBO
+	                                                   //  2、先将glBindVertexArray绑定到VAO, 再将glBindBuffer绑定到VBO；
+	                                                   //  3、将需要使用到的顶点数据传输到BufferData中
+	                                                   //  4、最后指定读取的方式，设置指针glVertexAttribPointer。
 	glBindBuffer(GL_ARRAY_BUFFER,VBO);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
 	
@@ -80,6 +83,7 @@ void Mesh::Draw(Shader shader)
 		glUniform1i(glGetUniformLocation(shader.Program, ("material." + name + number).c_str()), i);
 		glBindTexture(GL_TEXTURE_2D, textures[i].id);
 	}
+	
 	glActiveTexture(GL_TEXTURE0);
 	//绘制Mesh
 	glBindVertexArray(VAO);

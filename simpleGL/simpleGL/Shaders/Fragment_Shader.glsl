@@ -56,9 +56,9 @@ uniform DirLight dirLight;  //平行光
 uniform PointLight pointLights[NR_POINT_LIGHTS]; //点光源
 uniform SpotLight spotLight; //聚光灯
 
-vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
-vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
-vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
+vec4 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec4 texColor);
+vec4 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec4 texColor );
+vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec4 texColor);
 
 void main()
 {
@@ -66,22 +66,24 @@ void main()
 	vec3 norm = normalize(Normal);
 	vec3 viewDir = normalize(viewPos - FragPos);
 
+	vec4 texColor = texture(material.texture_diffuse1, TexCoords);
+
 	//第一步，计算平行光照
-	vec3 result = CalcDirLight(dirLight, norm, viewDir);
+	//vec4 result = CalcDirLight(dirLight, norm, viewDir, texColor);
 
 	//第二步，计算灯光照
-	for (int i = 0; i < NR_POINT_LIGHTS; i++)
-		result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
+	//for (int i = 0; i < NR_POINT_LIGHTS; i++)
+	//	result += CalcPointLight(pointLights[i], norm, FragPos, viewDir, texColor);
 
 	//第三步，计算聚光灯
-	result += CalcSpotLight(spotLight, norm, FragPos, viewDir);
+	//result += CalcSpotLight(spotLight, norm, FragPos, viewDir, texColor);
 
-	FragColor = vec4(result, 1.0);
+	FragColor = texColor;
 	
 }
 
 
-vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
+vec4 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec4 texColor)
 {
 	vec3 lightDir = normalize(-light.direction);
 	//计算漫反射强度
@@ -90,14 +92,14 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
 	vec3 reflectDir = reflect(-lightDir, normal);
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
 	//合并各个光照分量
-	vec3 ambient = light.ambient * vec3(texture(material.texture_diffuse1, TexCoords));
-	vec3 diffuse = light.diffuse * diff * vec3(texture(material.texture_diffuse1, TexCoords));
-	vec3 specular = light.specular * spec * vec3(texture(material.texture_specular1, TexCoords));
+	vec4 ambient = vec4(light.ambient, 1.0f)  * texColor;
+	vec4 diffuse = vec4(light.diffuse, 1.0f)   * diff * texColor;
+	vec4 specular = vec4(light.specular, 1.0f) * spec  * texColor;
 
 	return (ambient + diffuse + specular);
 }
 
-vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
+vec4 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec4 texColor)
 {
 	vec3 lightDir = normalize(light.position - fragPos);
 	//计算漫反射强度
@@ -110,9 +112,9 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 	float attenuation = 1.0f / (light.constant + light.linear_para * distance + light.quadratic * distance * distance);
 
 	//合并各个光照分量
-	vec3 ambient = light.ambient * vec3(texture(material.texture_diffuse1, TexCoords));
-	vec3 diffuse = light.diffuse * diff * vec3(texture(material.texture_diffuse1, TexCoords));
-	vec3 specular = light.specular * spec * vec3(texture(material.texture_specular1, TexCoords));
+	vec4 ambient = vec4(light.ambient, 1.0f) * texColor;
+	vec4 diffuse = vec4(light.diffuse, 1.0f)  * diff * texColor;
+	vec4 specular = vec4(light.specular , 1.0f) * spec * texColor;
 	ambient *= attenuation;
 	diffuse *= attenuation;
 	specular *= attenuation;
@@ -120,7 +122,7 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 	return (ambient + diffuse + specular);
 }
 
-vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir) 
+vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec4 texColor)
 {
 	vec3 lightDir = normalize(light.position - fragPos);
 	float theta = dot(lightDir, normalize(-light.direction));
@@ -134,9 +136,9 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
 		
     //合并各个光照分量
-	vec3 ambient = intensity * light.ambient * vec3(texture(material.texture_diffuse1, TexCoords));
-	vec3 diffuse = intensity * light.diffuse * diff * vec3(texture(material.texture_diffuse1, TexCoords));
-	vec3 specular = intensity * light.specular * spec * vec3(texture(material.texture_diffuse1, TexCoords));
+	vec4 ambient = intensity * vec4(light.ambient, 1.0f) * texColor;
+	vec4 diffuse = intensity * vec4(light.diffuse, 1.0f) * diff * texColor;
+	vec4 specular = intensity * vec4(light.specular, 1.0f) * spec * texColor;
 
 	return (ambient + diffuse + specular);
 
