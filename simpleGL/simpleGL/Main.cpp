@@ -6,6 +6,7 @@
 #include"Dependencies\glm\gtc\type_ptr.hpp"
 #include<iostream>
 #include<string>
+#include<map>
 #include"Core\Camera.h"
 #include"Core\Model.h"
 #include"Dependencies\assimpd\assimp\vector3.h"
@@ -147,6 +148,7 @@ int main(int argc, char **argv)
 	if (glewInit() != GLEW_OK)
 	{
 		std::cout << "Failed to initialize GLEW" << std::endl;
+		return -1;
 	}
 
 	//设置按键事件
@@ -394,12 +396,20 @@ void DrawGrass(Shader& shader, const GLuint& VAO, unsigned int textureId ,const 
 	glUniform1i(glGetUniformLocation(shader.Program, "material.texture_diffuse1"), 0);
 	glBindTexture(GL_TEXTURE_2D, textureId);
 
-	glBindVertexArray(VAO);
-	glm::mat4 model;
+	std::map<float, glm::vec3> sorted;
 	for (unsigned int i = 0; i < vegetation.size(); i++)
 	{
+		float distance = glm::length(camera.Position - vegetation[i]);
+		sorted[distance] = vegetation[i];
+	}
+
+	glBindVertexArray(VAO);
+	glm::mat4 model;
+
+	for (std::map<float, glm::vec3>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
+	{
 		model = glm::mat4();
-		model = glm::translate(model, vegetation[i]);
+		model = glm::translate(model, it->second);
 		shader.setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 	}
