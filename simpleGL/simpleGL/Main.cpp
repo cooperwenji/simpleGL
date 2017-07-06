@@ -181,7 +181,8 @@ int main(int argc, char **argv)
 	SpotLight spotLight(camera.Position- glm::vec3(0.0f,0.0f,18.0f), camera.Front, glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(17.5f)),glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f));
 	
 	//半透明窗户 数据设置
-	glEnable(GL_BLEND);
+//	glEnable(GL_BLEND);   //融合；
+	glEnable(GL_CULL_FACE);  //面剔除；
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	unsigned int grassTextureId = SetGrassData(grassVAO, grassVBO, grassVertices, sizeof(grassVertices) / sizeof(GLfloat), "./blending_transparent_window.png");
