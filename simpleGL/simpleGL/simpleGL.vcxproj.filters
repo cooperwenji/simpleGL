@@ -24,5 +24,9 @@
     <None Include="Shaders\light_fragShader.glsl" />
     <None Include="Shaders\lamp_verShader.glsl" />
     <None Include="Shaders\lamp_fragShader.glsl" />
+    <None Include="Shaders\5.1.framebuffers.vs" />
+    <None Include="Shaders\5.1.framebuffers.fs" />
+    <None Include="Shaders\5.1.framebuffers_screen.vs" />
+    <None Include="Shaders\5.1.framebuffers_screen.fs" />
   </ItemGroup>
 </Project>

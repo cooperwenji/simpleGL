@@ -81,6 +81,18 @@ glm::vec3 cubePositions[] = {
 	glm::vec3(-1.3f,  1.0f, -1.5f)
 };
 
+//framebuffer ---second render vertices
+GLfloat quadVertices[] = {
+   //--coordinate------texCoords---
+	-1.0f, -1.0f,     0.0f, 0.0f,
+	 1.0f, -1.0f,     1.0f, 0.0f,
+	 1.0f,  1.0f,     1.0f, 1.0f,
+
+	-1.0f, -1.0f,     0.0f, 0.0f,
+     1.0f,  1.0f,     1.0f, 1.0f,
+	-1.0f,  1.0f,     0.0f, 1.0f
+};
+
 //草的顶点数据
 GLfloat grassVertices[] = {
 	0.0f, 0.5f, 0.0f,   0.0f, 0.0f,
@@ -98,6 +110,9 @@ GLuint EBO;
 
 GLuint grassVBO;
 GLuint grassVAO;
+
+GLuint screenVAO;
+GLuint screenVBO;
 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
@@ -127,9 +142,13 @@ void do_movement();
 unsigned int SetGrassData(GLuint& VAO, GLuint& VBO, GLfloat vertice[], int verticeLength, const string& filename);
 void DrawGrass(Shader& shader, const GLuint& VAO, unsigned int textureId, const std::vector<glm::vec3>& vegetation);
 
+//defalut framebuffer function
+void SetQuadData(GLuint& VAO, GLuint& VBO, GLfloat vertice[], int verticeLength);
+void DrawQuad(Shader& shader,  GLuint textureColorbuffer);
+
 int main(int argc, char **argv) 
 {
-	glfwInit();
+	glfwInit(); 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -165,7 +184,7 @@ int main(int argc, char **argv)
 	//设置和编译着色器
 	Shader shader("./Shaders/Vertex_Shader.glsl", "./Shaders/Fragment_Shader.glsl");
 	Shader lightingshader("./Shaders/lamp_verShader.glsl", "./Shaders/lamp_fragShader.glsl");
-
+	Shader screenShader("./Shaders/5.1.framebuffers_screen.vs", "./Shaders/5.1.framebuffers_screen.fs");
 	//加载模型
 	Model ourModel("../Model_Lib/nanosuit/nanosuit.obj");
 
@@ -185,6 +204,7 @@ int main(int argc, char **argv)
 	glEnable(GL_CULL_FACE);  //面剔除；
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	//grass data setting
 	unsigned int grassTextureId = SetGrassData(grassVAO, grassVBO, grassVertices, sizeof(grassVertices) / sizeof(GLfloat), "./blending_transparent_window.png");
 	std::vector<glm::vec3> vegetation;
 	vegetation.push_back(glm::vec3(-1.5f, 0.0f, -0.48f));
@@ -193,7 +213,7 @@ int main(int argc, char **argv)
 	vegetation.push_back(glm::vec3(-0.3f, 0.0f, -2.3f));
 	vegetation.push_back(glm::vec3(0.5f, 0.0f, -0.6f));
 
-	//灯光设置
+	//lighting setting
 	GLuint lightVAO;
 	glGenVertexArrays(1, &lightVAO);
 	glGenBuffers(1, &VBO);
@@ -205,8 +225,33 @@ int main(int argc, char **argv)
 	glEnableVertexAttribArray(0);
 	glBindVertexArray(0);
 
-	//矩阵变换
-	
+	//帧缓存对象
+	GLuint framebuffer;
+	glGenFramebuffers(1, &framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+	//纹理附件
+	GLuint texColorBuffer;
+	glGenTextures(1, &texColorBuffer);
+	glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	//-----将纹理附件attach 到帧缓存对象中
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColorBuffer, 0);
+	//渲染缓冲对象  render buffer object
+	GLuint rbo;
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	//-----将渲染缓冲对象附加到帧缓存中
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+	//检查帧缓冲是否准备好
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "ERROR::FRAMEBUFFER::Framebuffer is not complete!" << std::endl;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	while (!glfwWindowShouldClose(window)) {
 		//检查事件;
 		glfwPollEvents();
@@ -217,8 +262,10 @@ int main(int argc, char **argv)
 		lastFrame = currentFrame;
 
 		//渲染指令;
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_DEPTH_TEST);
 
 		shader.Use();  
 
@@ -414,5 +461,33 @@ void DrawGrass(Shader& shader, const GLuint& VAO, unsigned int textureId ,const 
 		shader.setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 	}
+	glBindVertexArray(0);
+}
+
+void SetQuadData(GLuint& VAO, GLuint& VBO, GLfloat vertice[], int verticeLength)
+{
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * verticeLength, vertice, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
+
+	glBindVertexArray(0);
+}
+
+void DrawQuad(Shader& shader,  GLuint textureColorbuffer)
+{
+	glBindVertexArray(VAO);
+	glDisable(GL_DEPTH_TEST);
+	glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(0);
 }
