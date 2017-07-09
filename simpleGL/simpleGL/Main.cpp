@@ -144,7 +144,7 @@ void DrawGrass(Shader& shader, const GLuint& VAO, unsigned int textureId, const 
 
 //defalut framebuffer function
 void SetQuadData(GLuint& VAO, GLuint& VBO, GLfloat vertice[], int verticeLength);
-void DrawQuad(Shader& shader,  GLuint textureColorbuffer);
+void DrawQuad(const GLuint& VAO,  GLuint textureColorbuffer);
 
 int main(int argc, char **argv) 
 {
@@ -184,7 +184,7 @@ int main(int argc, char **argv)
 	//设置和编译着色器
 	Shader shader("./Shaders/Vertex_Shader.glsl", "./Shaders/Fragment_Shader.glsl");
 	Shader lightingshader("./Shaders/lamp_verShader.glsl", "./Shaders/lamp_fragShader.glsl");
-	Shader screenShader("./Shaders/5.1.framebuffers_screen.vs", "./Shaders/5.1.framebuffers_screen.fs");
+	Shader screenShader("./Shaders/5.1.framebuffers_screen_vs.glsl", "./Shaders/5.1.framebuffers_screen_fs.glsl");
 	//加载模型
 	Model ourModel("../Model_Lib/nanosuit/nanosuit.obj");
 
@@ -195,7 +195,7 @@ int main(int argc, char **argv)
 	PointLight pointlight_three(glm::vec3(-4.0f, 2.0f, -12.0f), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.09f, 0.032f));
 	PointLight pointlight_four(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.09f, 0.032f));
 	//2.平行光对象
-	DirLight dirLight(glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.5f, 0.50f, 0.50f), glm::vec3(0.4f, 0.4f, 0.4f), glm::vec3(0.5f, 0.5f, 0.5f));
+	DirLight dirLight(glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.05f, 0.050f, 0.050f), glm::vec3(0.4f, 0.4f, 0.4f), glm::vec3(0.5f, 0.5f, 0.5f));
 	//3.聚光灯对象
 	SpotLight spotLight(camera.Position- glm::vec3(0.0f,0.0f,18.0f), camera.Front, glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(17.5f)),glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f));
 	
@@ -212,6 +212,9 @@ int main(int argc, char **argv)
 	vegetation.push_back(glm::vec3(0.0f, 0.0f, 0.7f));
 	vegetation.push_back(glm::vec3(-0.3f, 0.0f, -2.3f));
 	vegetation.push_back(glm::vec3(0.5f, 0.0f, -0.6f));
+
+	//screen data setting
+	SetQuadData(screenVAO, screenVBO, quadVertices, sizeof(quadVertices) / sizeof(GLfloat));
 
 	//lighting setting
 	GLuint lightVAO;
@@ -316,6 +319,14 @@ int main(int argc, char **argv)
 		glBindVertexArray(lightVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
+
+		//defalut framebuffer
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		screenShader.Use();
+		DrawQuad(screenVAO, texColorBuffer);
 
 		//交换缓冲;
 		glfwSwapBuffers(window);   
@@ -483,7 +494,7 @@ void SetQuadData(GLuint& VAO, GLuint& VBO, GLfloat vertice[], int verticeLength)
 	glBindVertexArray(0);
 }
 
-void DrawQuad(Shader& shader,  GLuint textureColorbuffer)
+void DrawQuad(const GLuint& VAO,  GLuint textureColorbuffer)
 {
 	glBindVertexArray(VAO);
 	glDisable(GL_DEPTH_TEST);

@@ -69,16 +69,16 @@ void main()
 	vec4 texColor = texture(material.texture_diffuse1, TexCoords);
 
 	//第一步，计算平行光照
-	//vec4 result = CalcDirLight(dirLight, norm, viewDir, texColor);
+	vec4 result = CalcDirLight(dirLight, norm, viewDir, texColor);
 
 	//第二步，计算灯光照
-	//for (int i = 0; i < NR_POINT_LIGHTS; i++)
-	//	result += CalcPointLight(pointLights[i], norm, FragPos, viewDir, texColor);
+	for (int i = 0; i < NR_POINT_LIGHTS; i++)
+		result += CalcPointLight(pointLights[i], norm, FragPos, viewDir, texColor);
 
 	//第三步，计算聚光灯
-	//result += CalcSpotLight(spotLight, norm, FragPos, viewDir, texColor);
+	result += CalcSpotLight(spotLight, norm, FragPos, viewDir, texColor);
 
-	FragColor = texColor;
+	FragColor = result;
 	
 }
 
