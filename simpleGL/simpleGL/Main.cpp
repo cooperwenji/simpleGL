@@ -104,6 +104,52 @@ GLfloat grassVertices[] = {
 	1.0f, 0.5f, 0.0f,   1.0f, 0.0f
 };
 
+//sky box vertices data
+float skyboxVertices[] = {
+	// positions          
+	-1.0f,  1.0f, -1.0f,
+	-1.0f, -1.0f, -1.0f,
+	1.0f, -1.0f, -1.0f,
+	1.0f, -1.0f, -1.0f,
+	1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+
+	-1.0f, -1.0f,  1.0f,
+	-1.0f, -1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f,  1.0f,
+	-1.0f, -1.0f,  1.0f,
+
+	1.0f, -1.0f, -1.0f,
+	1.0f, -1.0f,  1.0f,
+	1.0f,  1.0f,  1.0f,
+	1.0f,  1.0f,  1.0f,
+	1.0f,  1.0f, -1.0f,
+	1.0f, -1.0f, -1.0f,
+
+	-1.0f, -1.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,
+	1.0f,  1.0f,  1.0f,
+	1.0f,  1.0f,  1.0f,
+	1.0f, -1.0f,  1.0f,
+	-1.0f, -1.0f,  1.0f,
+
+	-1.0f,  1.0f, -1.0f,
+	1.0f,  1.0f, -1.0f,
+	1.0f,  1.0f,  1.0f,
+	1.0f,  1.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,
+	-1.0f,  1.0f, -1.0f,
+
+	-1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f,  1.0f,
+	1.0f, -1.0f, -1.0f,
+	1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f,  1.0f,
+	1.0f, -1.0f,  1.0f
+};
+
 GLuint VBO;
 GLuint VAO;
 GLuint EBO;
@@ -113,6 +159,9 @@ GLuint grassVAO;
 
 GLuint screenVAO;
 GLuint screenVBO;
+
+GLuint skyboxVAO;
+GLuint skyboxVBO;
 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
@@ -145,6 +194,10 @@ void DrawGrass(Shader& shader, const GLuint& VAO, unsigned int textureId, const 
 //defalut framebuffer function
 void SetQuadData(GLuint& VAO, GLuint& VBO, GLfloat vertice[], int verticeLength);
 void DrawQuad(const GLuint& VAO,  GLuint textureColorbuffer);
+
+//load cube map
+GLuint loadCubemap(vector<const GLchar*> faces);
+void SetCubemapData(GLuint& VAO, GLuint& VBO, GLfloat vertice[], int verticeLength);
 
 int main(int argc, char **argv) 
 {
@@ -185,8 +238,19 @@ int main(int argc, char **argv)
 	Shader shader("./Shaders/Vertex_Shader.glsl", "./Shaders/Fragment_Shader.glsl");
 	Shader lightingshader("./Shaders/lamp_verShader.glsl", "./Shaders/lamp_fragShader.glsl");
 	Shader screenShader("./Shaders/5.1.framebuffers_screen_vs.glsl", "./Shaders/5.1.framebuffers_screen_fs.glsl");
+	Shader skyBoxShader("./Shaders/5.2.cubemap_vs.glsl", "./Shaders/5.2.cubemap_fs.glsl");
 	//加载模型
 	Model ourModel("../Model_Lib/nanosuit/nanosuit.obj");
+
+	//Sky box
+	std::vector<const GLchar*> skyBoxTextrueFile;
+	skyBoxTextrueFile.push_back("../skybox/right.jpg");
+	skyBoxTextrueFile.push_back("../skybox/left.jpg");
+	skyBoxTextrueFile.push_back("../skybox/top.jpg");
+	skyBoxTextrueFile.push_back("../skybox/bottom.jpg");
+	skyBoxTextrueFile.push_back("../skybox/back.jpg");
+	skyBoxTextrueFile.push_back("../skybox/front.jpg");
+	GLuint cubemapTexture = loadCubemap(skyBoxTextrueFile);
 
 //灯源对象
 	//1.点光源对象
@@ -203,6 +267,9 @@ int main(int argc, char **argv)
 //	glEnable(GL_BLEND);   //融合；
 	glEnable(GL_CULL_FACE);  //面剔除；
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	//cube map setting
+	SetCubemapData(skyboxVAO, skyboxVBO, skyboxVertices, sizeof(skyboxVertices) / sizeof(GLfloat));
 
 	//grass data setting
 	unsigned int grassTextureId = SetGrassData(grassVAO, grassVBO, grassVertices, sizeof(grassVertices) / sizeof(GLfloat), "./blending_transparent_window.png");
@@ -270,7 +337,6 @@ int main(int argc, char **argv)
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
 
-		shader.Use();  
 
 		glm::mat4 model;
 		model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f));
@@ -279,6 +345,7 @@ int main(int argc, char **argv)
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
 		glm::mat4 trans = projection * view;
 
+		shader.Use();
 		//传送矩阵
 		shader.setMat4("transform", trans);
 		shader.setMat4("model", model);
@@ -304,7 +371,6 @@ int main(int argc, char **argv)
 		ourModel.Draw(shader);
 
 		//传送草的相关矩阵
-
 		DrawGrass(shader, grassVAO, grassTextureId, vegetation);
 
 		//灯光物体着色器
@@ -319,6 +385,21 @@ int main(int argc, char **argv)
 		glBindVertexArray(lightVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
+
+		//cube map drawing
+		glDepthFunc(GL_LEQUAL);
+		skyBoxShader.Use();
+		view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
+
+		skyBoxShader.setMat4("projection", projection);
+		skyBoxShader.setMat4("view", view);
+
+		glBindVertexArray(skyboxVAO);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+		glDepthFunc(GL_LESS);
+
 
 		//defalut framebuffer
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -502,3 +583,46 @@ void DrawQuad(const GLuint& VAO,  GLuint textureColorbuffer)
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(0);
 }
+
+GLuint loadCubemap(vector<const GLchar*> faces)
+{
+	GLuint textureID;
+	glGenTextures(1, &textureID);
+	glActiveTexture(GL_TEXTURE0);
+
+	int width, height, nrComponent;
+	unsigned char* image;
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+	for (int i = 0; i < faces.size(); i++)
+	{
+		image = stbi_load(faces[i], &width, &height, &nrComponent, 0);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
+			GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+	return textureID;
+}
+
+void SetCubemapData(GLuint& VAO, GLuint& VBO, GLfloat vertice[], int verticeLength)
+{
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)* verticeLength, vertice, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	glBindVertexArray(0);
+}
+

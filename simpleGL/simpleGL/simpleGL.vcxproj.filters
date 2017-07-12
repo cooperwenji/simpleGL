@@ -28,5 +28,7 @@
     <None Include="Shaders\5.1.framebuffers.fs" />
     <None Include="Shaders\5.1.framebuffers_screen_vs.glsl" />
     <None Include="Shaders\5.1.framebuffers_screen_fs.glsl" />
+    <None Include="Shaders\5.2.cubemap_vs.glsl" />
+    <None Include="Shaders\5.2.cubemap_fs.glsl" />
   </ItemGroup>
 </Project>

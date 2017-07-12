@@ -40,10 +40,14 @@ struct SpotLight {
 
 #define NR_POINT_LIGHTS 4
 
-in vec3 ourColor;
-in vec2 TexCoords;
-in vec3 Normal;
-in vec3 FragPos;
+in VS_OUT
+{
+	vec2 TexCoords;
+	vec3 Normal;
+	vec3 FragPos;
+}fs_in;
+
+
 
 out vec4 FragColor;
 
@@ -63,20 +67,20 @@ vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec
 void main()
 {
 	//一些属性
-	vec3 norm = normalize(Normal);
-	vec3 viewDir = normalize(viewPos - FragPos);
+	vec3 norm = normalize(fs_in.Normal);
+	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 
-	vec4 texColor = texture(material.texture_diffuse1, TexCoords);
+	vec4 texColor = texture(material.texture_diffuse1, fs_in.TexCoords);
 
 	//第一步，计算平行光照
 	vec4 result = CalcDirLight(dirLight, norm, viewDir, texColor);
 
 	//第二步，计算灯光照
 	for (int i = 0; i < NR_POINT_LIGHTS; i++)
-		result += CalcPointLight(pointLights[i], norm, FragPos, viewDir, texColor);
+		result += CalcPointLight(pointLights[i], norm, fs_in.FragPos, viewDir, texColor);
 
 	//第三步，计算聚光灯
-	result += CalcSpotLight(spotLight, norm, FragPos, viewDir, texColor);
+	result += CalcSpotLight(spotLight, norm, fs_in.FragPos, viewDir, texColor);
 
 	FragColor = result;
 	
