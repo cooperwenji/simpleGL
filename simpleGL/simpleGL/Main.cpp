@@ -193,7 +193,7 @@ void DrawGrass(Shader& shader, const GLuint& VAO, unsigned int textureId, const 
 
 //defalut framebuffer function
 void SetQuadData(GLuint& VAO, GLuint& VBO, GLfloat vertice[], int verticeLength);
-void DrawQuad(const GLuint& VAO,  GLuint textureColorbuffer);
+void DrawQuad(Shader& shader,  GLuint textureColorbuffer);
 
 //load cube map
 GLuint loadCubemap(vector<const GLchar*> faces);
